@@ -1,0 +1,231 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Examiner or analyst profile in the biometric forensics registry.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user ID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Examiner full name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile picture URL from Google Auth."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["ANALYST", "ADMIN", "VIEWER"],
+          "description": "Forensic access privilege tier."
+        },
+        "agency": {
+          "type": "string",
+          "description": "Designated investigative unit or agency."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update."
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "ForensicCase": {
+      "title": "ForensicCase",
+      "description": "A digital image morphing screening investigation record.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique case reference ID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Descriptive case investigation title."
+        },
+        "suspectId": {
+          "type": "string",
+          "description": "Suspect or biometric subject identifier."
+        },
+        "imageHash": {
+          "type": "string",
+          "description": "Cryptographic SHA-256 evidence hash."
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["LOW RISK", "MODERATE RISK", "HIGHER RISK", "INCONCLUSIVE"],
+          "description": "Calibrated forensic composite risk tier."
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Statistical confidence score between 0 and 1."
+        },
+        "analystVerdict": {
+          "type": "string",
+          "enum": ["VERIFIED_AUTHENTIC", "CONFIRMED_MORPH", "FLAGGED_FOR_MANUAL_REVIEW", "PENDING_REVIEW"],
+          "description": "Official examiner sign-off determination."
+        },
+        "analystNotes": {
+          "type": "string",
+          "description": "Qualitative examiner observations."
+        },
+        "reviewedBy": {
+          "type": "string",
+          "description": "Email of reviewing examiner."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last modified timestamp."
+        }
+      },
+      "required": ["id", "title", "imageHash", "riskLevel"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable tamper-evident chain of custody action log.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique log entry ID."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of action."
+        },
+        "action": {
+          "type": "string",
+          "description": "Forensic action category."
+        },
+        "details": {
+          "type": "string",
+          "description": "Operational event log details."
+        },
+        "user": {
+          "type": "string",
+          "description": "Examiner email."
+        },
+        "role": {
+          "type": "string",
+          "description": "Examiner role."
+        },
+        "integrityHash": {
+          "type": "string",
+          "description": "Cryptographic proof hash chaining the log entry."
+        }
+      },
+      "required": ["id", "timestamp", "action", "details", "user", "integrityHash"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Persistent multi-turn Gemini forensic consultation thread.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Session identifier."
+        },
+        "title": {
+          "type": "string",
+          "description": "Topic or inquiry subject."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the session owner."
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Email of the session owner."
+        },
+        "roleInstruction": {
+          "type": "string",
+          "description": "System role given to the Gemini chatbot."
+        },
+        "modelName": {
+          "type": "string",
+          "description": "Gemini model used (gemini-3.5-flash, gemini-3.1-flash-lite, or gemini-3.1-pro-preview)."
+        },
+        "caseId": {
+          "type": "string",
+          "description": "Optional attached case ID for grounded analysis."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last message timestamp."
+        }
+      },
+      "required": ["id", "userId", "roleInstruction", "modelName", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single conversational turn in a multi-turn chat session.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique message ID."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Parent ChatSession ID."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model", "system"],
+          "description": "Author of message turn."
+        },
+        "text": {
+          "type": "string",
+          "description": "Message textual payload."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp."
+        },
+        "modelUsed": {
+          "type": "string",
+          "description": "Model used for model turn."
+        }
+      },
+      "required": ["id", "sessionId", "role", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores individual examiner authentication profiles and authorization roles."
+    },
+    "/cases/{caseId}": {
+      "schema": { "$ref": "#/entities/ForensicCase" },
+      "description": "Stores image forensics investigations, biometric signals, and verdicts."
+    },
+    "/auditTrail/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Append-only forensic audit trail for ISO/IEC 27037 chain of custody compliance."
+    },
+    "/chatSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/ChatSession" },
+      "description": "Stores multi-turn Gemini AI chatbot conversation sessions."
+    },
+    "/chatSessions/{sessionId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Stores chronologically ordered conversation turns for a chat session."
+    }
+  }
+}

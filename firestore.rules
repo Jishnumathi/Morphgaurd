@@ -1,0 +1,141 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Security Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'vu.241fa04468@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Blueprint for User Profiles
+    function isValidUser(data) {
+      return data.uid is string &&
+        data.uid == request.auth.uid &&
+        data.email is string &&
+        data.email.size() <= 150 &&
+        (!('role' in data) || data.role in ['ANALYST', 'ADMIN', 'VIEWER']) &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100));
+    }
+
+    // Validation Blueprint for Forensic Cases
+    function isValidCase(data) {
+      return data.id is string &&
+        data.id.size() <= 128 &&
+        data.title is string &&
+        data.title.size() <= 200 &&
+        data.imageHash is string &&
+        data.imageHash.size() <= 128 &&
+        data.riskLevel in ['LOW RISK', 'MODERATE RISK', 'HIGHER RISK', 'INCONCLUSIVE'];
+    }
+
+    // Validation Blueprint for Audit Logs (Immutable)
+    function isValidAuditLog(data) {
+      return data.id is string &&
+        data.id.size() <= 128 &&
+        data.timestamp is string &&
+        data.action is string &&
+        data.action.size() <= 100 &&
+        data.user is string &&
+        data.user.size() <= 150 &&
+        data.integrityHash is string &&
+        data.integrityHash.size() <= 128;
+    }
+
+    // Validation Blueprint for Chat Sessions
+    function isValidChatSession(data) {
+      return data.id is string &&
+        data.id.size() <= 128 &&
+        data.userId is string &&
+        data.userId == request.auth.uid &&
+        data.roleInstruction is string &&
+        data.roleInstruction.size() <= 2000 &&
+        data.modelName is string &&
+        data.modelName.size() <= 100;
+    }
+
+    // Validation Blueprint for Chat Messages
+    function isValidChatMessage(data) {
+      return data.id is string &&
+        data.id.size() <= 128 &&
+        data.role in ['user', 'model', 'system'] &&
+        data.text is string &&
+        data.text.size() <= 50000;
+    }
+
+    // Connection Health Probe (Used by startup connection test)
+    match /test/{testId} {
+      allow get: if true;
+      allow write: if false;
+    }
+
+    // User Collection Rules
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUser(incoming());
+      allow update: if isValidId(userId) && (isOwner(userId) || isAdmin()) && isValidUser(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Forensic Cases Collection (Public Read/List for Examiners, Signed-in Write, Admin Delete)
+    match /cases/{caseId} {
+      allow get, list: if true;
+      allow create: if isValidId(caseId) && isSignedIn() && isValidCase(incoming());
+      allow update: if isValidId(caseId) && isSignedIn() && isValidCase(incoming());
+      allow delete: if isValidId(caseId) && isAdmin();
+    }
+
+    // Chain of Custody Audit Trail (Public Read/List for Transparency, Signed-in Append, Immutable)
+    match /auditTrail/{logId} {
+      allow get, list: if true;
+      allow create: if isValidId(logId) && isSignedIn() && isValidAuditLog(incoming());
+      allow update, delete: if false; // Strict Immutability Guard
+    }
+
+    // Multi-turn Gemini Chat Sessions
+    match /chatSessions/{sessionId} {
+      allow get: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn();
+      allow create: if isValidId(sessionId) && isSignedIn() && isValidChatSession(incoming());
+      allow update: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin()) && isValidChatSession(incoming());
+      allow delete: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      // Chat Messages Subcollection
+      match /messages/{messageId} {
+        allow get, list: if isValidId(messageId) && isSignedIn() &&
+          (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin());
+        allow create: if isValidId(messageId) && isSignedIn() && isValidChatMessage(incoming()) &&
+          (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin());
+        allow update, delete: if isAdmin();
+      }
+    }
+  }
+}
