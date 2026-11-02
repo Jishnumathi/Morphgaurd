@@ -69,10 +69,29 @@ async function startServer() {
     });
   });
 
+  // Load default Google Client ID from firebase-applet-config.json if available
+  let defaultGoogleClientId = '';
+  try {
+    const fbConfigPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(fbConfigPath)) {
+      const fbConfig = JSON.parse(fs.readFileSync(fbConfigPath, 'utf8'));
+      if (fbConfig.oAuthClientId) {
+        defaultGoogleClientId = fbConfig.oAuthClientId;
+      }
+    }
+  } catch {
+    // fallback gracefully
+  }
+
   // Authentication Configuration
   app.get('/api/auth/config', (req: Request, res: Response) => {
+    const googleClientId =
+      process.env.GOOGLE_CLIENT_ID ||
+      process.env.VITE_GOOGLE_CLIENT_ID ||
+      defaultGoogleClientId ||
+      '';
     res.json({
-      googleClientId: process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '',
+      googleClientId,
       appUrl: process.env.APP_URL || '',
       environment: process.env.NODE_ENV || 'development',
     });
@@ -80,7 +99,10 @@ async function startServer() {
 
   // Google OAuth Authorization URL Builder (Popup Flow)
   app.get('/api/auth/google/url', (req: Request, res: Response) => {
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId =
+      process.env.GOOGLE_CLIENT_ID ||
+      process.env.VITE_GOOGLE_CLIENT_ID ||
+      defaultGoogleClientId;
     const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
     const redirectUri = `${baseUrl}/auth/callback`;
 

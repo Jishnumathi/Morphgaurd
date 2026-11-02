@@ -407,24 +407,22 @@ Ready for your queries on biometric morph detection.`,
         }
       >
         {/* Top Header */}
-        <div className="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-400 shadow-inner">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
+        <div className="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <Sparkles className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold tracking-tight text-white">
-                  MorphGuard AI Forensic Assistant
+                <span className="text-sm font-bold tracking-tight text-white">
+                  MorphGuard Copilot
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">
-                  Multi-Turn
-                </span>
+                <span className="text-xs text-slate-500">· Multi-Turn Assistant</span>
               </div>
-              <p className="text-[10px] text-slate-400 flex items-center gap-1.5">
+              <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
                 <span>{currentRole.title}</span>
-                <span>•</span>
-                <span className="text-indigo-400 font-mono font-medium">{selectedModel}</span>
+                <span>·</span>
+                <span className="text-indigo-400 font-mono">{selectedModel}</span>
               </p>
             </div>
           </div>
@@ -435,13 +433,13 @@ Ready for your queries on biometric morph detection.`,
               id="btn-chat-sessions-history"
               title="Saved Sessions"
               onClick={() => setShowSessionDrawer(!showSessionDrawer)}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
+              className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                 showSessionDrawer
-                  ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40'
+                  ? 'bg-slate-800 text-indigo-300 border border-indigo-500/40'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Clock className="w-3.5 h-3.5" />
+              <Clock className="w-4 h-4" />
             </button>
 
             {/* Role & Settings Button */}
@@ -449,13 +447,13 @@ Ready for your queries on biometric morph detection.`,
               id="btn-chat-role-settings"
               title="System Instructions & Roles"
               onClick={() => setShowRoleConfig(!showRoleConfig)}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
+              className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                 showRoleConfig
-                  ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40'
+                  ? 'bg-slate-800 text-indigo-300 border border-indigo-500/40'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Sliders className="w-3.5 h-3.5" />
+              <Sliders className="w-4 h-4" />
             </button>
 
             {/* Clear thread */}
@@ -463,9 +461,9 @@ Ready for your queries on biometric morph detection.`,
               id="btn-clear-chat-thread"
               title="New Consultation"
               onClick={handleClearThread}
-              className="p-1.5 text-slate-400 hover:text-amber-300 hover:bg-slate-800 rounded-lg text-xs transition-colors"
+              className="p-1.5 text-slate-400 hover:text-amber-300 hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-4 h-4" />
             </button>
 
             {/* Expand / Minimize */}
@@ -473,16 +471,16 @@ Ready for your queries on biometric morph detection.`,
               id="btn-toggle-expand-chat"
               title={isExpanded ? 'Restore size' : 'Expand window'}
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-xs transition-colors hidden sm:inline-flex"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-xs transition-colors hidden sm:inline-flex cursor-pointer"
             >
-              {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
 
             {/* Close */}
             <button
               id="btn-close-chat"
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-xs transition-colors"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -490,10 +488,10 @@ Ready for your queries on biometric morph detection.`,
         </div>
 
         {/* Configuration Toolbar (Role & Model Selector) */}
-        <div className="px-4 py-2 bg-slate-950/60 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs flex-shrink-0">
-          {/* Model Selector Pill */}
-          <div className="flex items-center space-x-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+        <div className="px-5 py-2.5 bg-slate-950/80 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs flex-shrink-0">
+          {/* Model Selector Segmented Control */}
+          <div className="flex items-center space-x-2">
+            <span className="text-[11px] text-slate-400 font-medium">
               Model:
             </span>
             <div className="inline-flex rounded-lg bg-slate-900 border border-slate-800 p-0.5">
@@ -501,55 +499,55 @@ Ready for your queries on biometric morph detection.`,
                 type="button"
                 id="btn-model-flash-lite"
                 onClick={() => setSelectedModel('gemini-3.1-flash-lite')}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
+                className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                   selectedModel === 'gemini-3.1-flash-lite'
-                    ? 'bg-amber-600/30 text-amber-300 font-bold border border-amber-500/50'
+                    ? 'bg-slate-800 text-amber-300 font-semibold shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Fast tasks: Rapid screening and triage"
               >
-                ⚡ Lite (Fast)
+                Lite (3.1)
               </button>
               <button
                 type="button"
                 id="btn-model-flash"
                 onClick={() => setSelectedModel('gemini-3.8-flash')}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
+                className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                   selectedModel === 'gemini-3.8-flash'
-                    ? 'bg-indigo-600/30 text-indigo-300 font-bold border border-indigo-500/50'
+                    ? 'bg-slate-800 text-indigo-300 font-semibold shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="General tasks: Balanced multimodal forensic intelligence"
               >
-                🌟 Flash (General)
+                Flash (3.8)
               </button>
               <button
                 type="button"
                 id="btn-model-pro"
                 onClick={() => setSelectedModel('gemini-3.1-pro-preview')}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
+                className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                   selectedModel === 'gemini-3.1-pro-preview'
-                    ? 'bg-purple-600/30 text-purple-300 font-bold border border-purple-500/50'
+                    ? 'bg-slate-800 text-purple-300 font-semibold shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Complex tasks: Deep mathematical and evidentiary proofs"
               >
-                🧠 Pro (Complex)
+                Pro (3.1)
               </button>
             </div>
           </div>
 
           {/* Attached Case Grounding Selector */}
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center space-x-2">
             <Paperclip className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-              Evidence:
+            <span className="text-[11px] text-slate-400 font-medium">
+              Grounding:
             </span>
             <select
               id="select-attached-case"
               value={attachedCaseId}
               onChange={(e) => setAttachedCaseId(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded px-2 py-0.5 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500"
+              className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 cursor-pointer"
             >
               <option value="">No Active Case (General)</option>
               {allCases.map((c) => (

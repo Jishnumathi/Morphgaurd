@@ -198,8 +198,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Google Identity Verified</span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
-                  GSI ACTIVE
+                <span className="text-xs font-mono text-emerald-400">
+                  · GSI Active
                 </span>
               </div>
               <div className="flex items-center space-x-3 pt-1">

@@ -224,8 +224,8 @@ export function subscribeToCases(
       onUpdate(cases);
     },
     (error) => {
+      console.warn('Firestore subscription on cases notice:', error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, 'cases');
     }
   );
 }
@@ -272,8 +272,8 @@ export function subscribeToAuditLogs(
       onUpdate(entries);
     },
     (error) => {
+      console.warn('Firestore subscription on auditTrail notice:', error);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, 'auditTrail');
     }
   );
 }
@@ -307,7 +307,14 @@ export async function saveChatSessionToFirestore(session: ChatSessionDoc) {
   }
   const sessionRef = doc(db, 'chatSessions', session.id);
   try {
-    await setDoc(sessionRef, session, { merge: true });
+    await setDoc(
+      sessionRef,
+      {
+        ...session,
+        userId: auth.currentUser.uid,
+      },
+      { merge: true }
+    );
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `chatSessions/${session.id}`);
   }

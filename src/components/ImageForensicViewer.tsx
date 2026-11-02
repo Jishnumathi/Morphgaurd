@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Layers, Eye, EyeOff, ZoomIn, ZoomOut, RotateCcw, Crosshair, SplitSquareVertical } from 'lucide-react';
+import { Layers, ZoomIn, ZoomOut, RotateCcw, Crosshair, SplitSquareVertical } from 'lucide-react';
 import { ForensicCase } from '../types.js';
 
 interface ImageForensicViewerProps {
@@ -62,16 +62,16 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
   };
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-sm flex flex-col space-y-3">
-      {/* Top Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
-        {/* Layer Selector */}
-        <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+    <div className="bg-slate-900/60 rounded-xl border border-slate-800/80 p-5 shadow-xs flex flex-col space-y-4">
+      {/* Top Controls Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+        {/* Layer Selector Segmented Controls */}
+        <div className="flex items-center p-0.5 bg-slate-950 rounded-lg border border-slate-800 overflow-x-auto max-w-full">
           <button
             id="layer-btn-heatmap"
             onClick={() => setActiveLayer('heatmap')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              activeLayer === 'heatmap' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              activeLayer === 'heatmap' ? 'bg-indigo-600 text-white font-semibold shadow-xs' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Anomaly Heatmap
@@ -79,8 +79,8 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
           <button
             id="layer-btn-noise"
             onClick={() => setActiveLayer('noise')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              activeLayer === 'noise' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              activeLayer === 'noise' ? 'bg-indigo-600 text-white font-semibold shadow-xs' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Noise Residual
@@ -88,8 +88,8 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
           <button
             id="layer-btn-fft"
             onClick={() => setActiveLayer('frequency')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              activeLayer === 'frequency' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              activeLayer === 'frequency' ? 'bg-indigo-600 text-white font-semibold shadow-xs' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             2D FFT Spectrum
@@ -97,8 +97,8 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
           <button
             id="layer-btn-ela"
             onClick={() => setActiveLayer('compression')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              activeLayer === 'compression' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              activeLayer === 'compression' ? 'bg-indigo-600 text-white font-semibold shadow-xs' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             JPEG ELA Map
@@ -106,8 +106,8 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
           <button
             id="layer-btn-edge"
             onClick={() => setActiveLayer('edge')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              activeLayer === 'edge' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              activeLayer === 'edge' ? 'bg-indigo-600 text-white font-semibold shadow-xs' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Edge Gradient
@@ -115,8 +115,8 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
           <button
             id="layer-btn-none"
             onClick={() => setActiveLayer('none')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              activeLayer === 'none' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              activeLayer === 'none' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             Clean Original
@@ -124,11 +124,11 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
         </div>
 
         {/* View Controls & Toggles */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           {/* Opacity Slider */}
           {activeLayer !== 'none' && !splitView && (
             <div className="flex items-center space-x-2 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs text-slate-300">
-              <span className="text-[11px] text-slate-400">Overlay:</span>
+              <span className="text-[11px] text-slate-400">Opacity:</span>
               <input
                 id="overlay-opacity-range"
                 type="range"
@@ -136,9 +136,9 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                 max="100"
                 value={overlayOpacity}
                 onChange={(e) => setOverlayOpacity(Number(e.target.value))}
-                className="w-20 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                className="w-20 h-1.5 bg-slate-750 rounded-lg appearance-none cursor-pointer accent-indigo-500"
               />
-              <span className="w-7 text-right font-mono text-[11px]">{overlayOpacity}%</span>
+              <span className="w-8 text-right font-mono text-[11px] tabular-nums">{overlayOpacity}%</span>
             </div>
           )}
 
@@ -147,10 +147,10 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
             id="toggle-landmarks-btn"
             onClick={() => setShowLandmarks(!showLandmarks)}
             title="Toggle Facial Biometric Landmarks"
-            className={`p-1.5 rounded-lg border text-xs font-medium transition-colors ${
+            className={`p-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
               showLandmarks
-                ? 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                ? 'bg-indigo-950 text-indigo-300 border-indigo-700/60'
+                : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
             }`}
           >
             <Crosshair className="w-4 h-4" />
@@ -161,10 +161,10 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
             id="toggle-split-btn"
             onClick={() => setSplitView(!splitView)}
             title="Side-by-Side Comparison Mode"
-            className={`p-1.5 rounded-lg border text-xs font-medium transition-colors ${
+            className={`p-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
               splitView
-                ? 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                ? 'bg-indigo-950 text-indigo-300 border-indigo-700/60'
+                : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
             }`}
           >
             <SplitSquareVertical className="w-4 h-4" />
@@ -174,15 +174,17 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
           <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
             <button
               onClick={() => setZoomLevel((z) => Math.max(1.0, parseFloat((z - 0.25).toFixed(2))))}
-              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer"
               title="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[11px] font-mono px-1 text-slate-300 min-w-[32px] text-center">{zoomLevel}x</span>
+            <span className="text-[11px] font-mono px-1 text-slate-300 min-w-[32px] text-center tabular-nums">
+              {zoomLevel}x
+            </span>
             <button
               onClick={() => setZoomLevel((z) => Math.min(2.5, parseFloat((z + 0.25).toFixed(2))))}
-              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer"
               title="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5" />
@@ -190,7 +192,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
             {zoomLevel > 1.0 && (
               <button
                 onClick={() => setZoomLevel(1.0)}
-                className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer"
                 title="Reset Zoom"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -201,16 +203,16 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
       </div>
 
       {/* Main Visual Display Stage */}
-      <div className="relative w-full min-h-[380px] max-h-[540px] bg-slate-950 rounded-lg overflow-auto flex items-center justify-center border border-slate-800/80 p-4">
+      <div className="relative w-full min-h-[380px] max-h-[540px] bg-slate-950 rounded-xl overflow-auto flex items-center justify-center border border-slate-800/80 p-4">
         {splitView ? (
           /* Side-by-Side Split View */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-full items-center justify-center">
             {/* Left: Original */}
             <div className="flex flex-col items-center">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">
+              <span className="text-xs font-mono text-slate-400 mb-2">
                 Original Query Frame
               </span>
-              <div className="relative rounded border border-slate-800 overflow-hidden max-h-[460px] flex items-center justify-center">
+              <div className="relative rounded-lg border border-slate-800 overflow-hidden max-h-[460px] flex items-center justify-center">
                 <img
                   src={currentCase.imageUrl}
                   alt="Original facial evidence"
@@ -221,10 +223,10 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
 
             {/* Right: Active Forensic Map */}
             <div className="flex flex-col items-center">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-400 mb-1.5 flex items-center gap-1">
+              <span className="text-xs font-mono text-indigo-400 mb-2">
                 Forensic Map: {activeLayer.toUpperCase()}
               </span>
-              <div className="relative rounded border border-slate-800 overflow-hidden max-h-[460px] flex items-center justify-center bg-black">
+              <div className="relative rounded-lg border border-slate-800 overflow-hidden max-h-[460px] flex items-center justify-center bg-black">
                 {overlayImageUrl ? (
                   <img
                     src={overlayImageUrl}
@@ -252,7 +254,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
             <img
               src={currentCase.imageUrl}
               alt="Facial evidence query"
-              className="max-h-[480px] w-auto object-contain block select-none rounded"
+              className="max-h-[480px] w-auto object-contain block select-none rounded-lg"
             />
 
             {/* Forensic Overlay Layer */}
@@ -261,7 +263,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                 src={overlayImageUrl}
                 alt="Forensic layer overlay"
                 style={{ opacity: overlayOpacity / 100 }}
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none mix-blend-screen transition-opacity rounded"
+                className="absolute inset-0 w-full h-full object-fill pointer-events-none mix-blend-screen transition-opacity rounded-lg"
               />
             )}
 
@@ -300,7 +302,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       strokeDasharray="2 2"
                     />
 
-                    {/* Central Vertical Midline (from eye center through nose, mouth to chin) */}
+                    {/* Central Vertical Midline */}
                     <line
                       x1={(face.landmarks.leftEye.x + face.landmarks.rightEye.x) / 2}
                       y1={(face.landmarks.leftEye.y + face.landmarks.rightEye.y) / 2}
@@ -311,7 +313,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       strokeDasharray="3 3"
                     />
 
-                    {/* Left Eye */}
+                    {/* Eye points */}
                     <circle
                       cx={face.landmarks.leftEye.x}
                       cy={face.landmarks.leftEye.y}
@@ -320,7 +322,6 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       stroke="#ffffff"
                       strokeWidth="1"
                     />
-                    {/* Right Eye */}
                     <circle
                       cx={face.landmarks.rightEye.x}
                       cy={face.landmarks.rightEye.y}
@@ -329,7 +330,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       stroke="#ffffff"
                       strokeWidth="1"
                     />
-                    {/* Nose */}
+                    {/* Nose point */}
                     <circle
                       cx={face.landmarks.noseTip.x}
                       cy={face.landmarks.noseTip.y}
@@ -338,7 +339,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       stroke="#ffffff"
                       strokeWidth="1"
                     />
-                    {/* Mouth Center */}
+                    {/* Mouth Points */}
                     <circle
                       cx={face.landmarks.mouthCenter.x}
                       cy={face.landmarks.mouthCenter.y}
@@ -347,7 +348,6 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       stroke="#ffffff"
                       strokeWidth="1"
                     />
-                    {/* Mouth Corners */}
                     <circle
                       cx={face.landmarks.leftMouthCorner.x}
                       cy={face.landmarks.leftMouthCorner.y}
@@ -364,7 +364,7 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
                       stroke="#ffffff"
                       strokeWidth="1"
                     />
-                    {/* Chin */}
+                    {/* Chin point */}
                     <circle
                       cx={face.landmarks.chin.x}
                       cy={face.landmarks.chin.y}
@@ -382,48 +382,48 @@ export const ImageForensicViewer: React.FC<ImageForensicViewerProps> = ({ curren
 
         {/* Live Coordinate Inspector Overlay */}
         {inspectCoord && (
-          <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur border border-slate-700 px-3 py-1.5 rounded-md text-[11px] font-mono text-slate-300 shadow-md pointer-events-none flex items-center space-x-3">
-            <div className="flex items-center space-x-1">
-              <Crosshair className="w-3 h-3 text-indigo-400" />
+          <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-300 shadow-sm pointer-events-none flex items-center space-x-3 tabular-nums">
+            <div className="flex items-center space-x-1.5">
+              <Crosshair className="w-3.5 h-3.5 text-indigo-400" />
               <span>X: {inspectCoord.x}px, Y: {inspectCoord.y}px</span>
             </div>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">Total: {dims.width}x{dims.height}px</span>
+            <span className="text-slate-600">·</span>
+            <span className="text-slate-400">Total: {dims.width}×{dims.height}px</span>
           </div>
         )}
       </div>
 
       {/* Legend & Modality Explanation Bar */}
-      <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-1">
-        <div className="flex items-center space-x-4">
-          <span className="font-semibold text-slate-300 text-[11px] uppercase tracking-wider">Map Legend:</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-1">
+        <div className="flex items-center space-x-3">
+          <span className="font-semibold text-slate-300 text-xs">Legend:</span>
           {activeLayer === 'heatmap' && (
             <div className="flex items-center space-x-2">
-              <div className="w-24 h-2 rounded bg-gradient-to-r from-blue-600 via-yellow-400 to-red-600" />
-              <span className="text-[10px] font-mono">Cold (Organic) → Hot (Composite Anomaly)</span>
+              <div className="w-20 h-1.5 rounded bg-gradient-to-r from-blue-600 via-yellow-400 to-red-600" />
+              <span className="text-[11px] font-mono">Organic (Low) → Anomalous (High)</span>
             </div>
           )}
           {activeLayer === 'noise' && (
-            <span className="text-[11px]">Laplacian 3x3 High-Pass Noise Residual (amplified sensor grain)</span>
+            <span className="text-xs">Laplacian 3×3 High-Pass Noise Residual (amplified sensor grain)</span>
           )}
           {activeLayer === 'frequency' && (
-            <span className="text-[11px]">2D FFT Log Magnitude Centered Spectrum (radial harmonics)</span>
+            <span className="text-xs">2D FFT Log Magnitude Spectrum (radial harmonic peaks)</span>
           )}
           {activeLayer === 'compression' && (
-            <span className="text-[11px]">Error Level Analysis (ELA) 90% recompression delta map</span>
+            <span className="text-xs">Error Level Analysis (ELA) 90% recompression delta map</span>
           )}
           {activeLayer === 'edge' && (
-            <span className="text-[11px]">Sobel Gradient Transition Magnitudes (boundary splice checks)</span>
+            <span className="text-xs">Sobel Gradient Magnitudes (splicing boundary checks)</span>
           )}
           {activeLayer === 'none' && (
-            <span className="text-[11px]">Direct camera source pixels without algorithmic filter overlay</span>
+            <span className="text-xs">Direct source pixels without algorithmic filter overlay</span>
           )}
         </div>
 
         {face && face.detected && (
-          <div className="text-[11px] text-slate-400 flex items-center space-x-2 font-mono">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Biometric Face Box: [{face.boundingBox?.x}, {face.boundingBox?.y}, {face.boundingBox?.width}x{face.boundingBox?.height}]</span>
+          <div className="text-xs text-slate-400 flex items-center space-x-2 font-mono tabular-nums">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+            <span>Biometric Box: [{face.boundingBox?.x}, {face.boundingBox?.y}, {face.boundingBox?.width}×{face.boundingBox?.height}]</span>
           </div>
         )}
       </div>

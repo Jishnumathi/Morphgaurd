@@ -72,6 +72,19 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleLoadSamplePortrait = async () => {
+    try {
+      const res = await fetch('/src/assets/images/authentic_passport_portrait_1791518756230.jpg');
+      const blob = await res.blob();
+      const sampleFile = new File([blob], 'icao_passport_standard_sample.jpg', { type: 'image/jpeg' });
+      setSubjectName('Amara Okafor');
+      setCaseTitle('ICAO 9303 Biometric Passport Screening: Amara Okafor');
+      handleFileSelect(sampleFile);
+    } catch (e) {
+      console.warn('Sample load note:', e);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -209,6 +222,18 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
                 </div>
               )}
             </div>
+            {!previewUrl && (
+              <div className="flex items-center justify-between pt-1.5 px-0.5">
+                <span className="text-[11px] text-slate-500">Need sample biometric evidence?</span>
+                <button
+                  type="button"
+                  onClick={handleLoadSamplePortrait}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer transition-colors"
+                >
+                  Load Calibrated Passport Photo →
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Subject & Case Metadata Fields */}

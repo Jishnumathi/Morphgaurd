@@ -303,29 +303,31 @@ export const BatchAnalysisModal: React.FC<BatchAnalysisModalProps> = ({
                         <td className="py-2.5 px-3">
                           {res ? (
                             <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
+                              className={`text-xs ${
                                 res.riskLevel === 'HIGHER RISK'
-                                  ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                                  ? 'text-rose-400 font-semibold'
                                   : res.riskLevel === 'MODERATE RISK'
-                                  ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                                  : res.riskLevel === 'INCONCLUSIVE'
-                                  ? 'bg-slate-800 text-slate-300'
-                                  : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                  ? 'text-amber-400 font-medium'
+                                  : res.riskLevel === 'LOW RISK'
+                                  ? 'text-emerald-400 font-medium'
+                                  : 'text-slate-400'
                               }`}
                             >
-                              {res.riskLevel}
+                              {res.riskLevel === 'HIGHER RISK' ? 'Higher Risk' :
+                               res.riskLevel === 'MODERATE RISK' ? 'Moderate Risk' :
+                               res.riskLevel === 'LOW RISK' ? 'Low Risk' : 'Inconclusive'}
                             </span>
                           ) : (
-                            <span className="text-slate-600">-</span>
+                            <span className="text-slate-600">—</span>
                           )}
                         </td>
 
-                        <td className="py-2.5 px-3 font-mono">
-                          {res && !res.isInconclusive ? `${(res.riskScore * 100).toFixed(0)}%` : '-'}
+                        <td className="py-2.5 px-3 font-mono tabular-nums text-slate-200">
+                          {res && !res.isInconclusive ? `${(res.riskScore * 100).toFixed(0)}%` : '—'}
                         </td>
 
-                        <td className="py-2.5 px-3 font-mono text-indigo-300">
-                          {res ? `${(res.confidence * 100).toFixed(0)}%` : '-'}
+                        <td className="py-2.5 px-3 font-mono tabular-nums text-indigo-300">
+                          {res ? `${(res.confidence * 100).toFixed(0)}%` : '—'}
                         </td>
 
                         <td className="py-2.5 px-3 text-right">
