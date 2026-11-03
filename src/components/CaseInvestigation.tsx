@@ -405,7 +405,12 @@ export const CaseInvestigation: React.FC<CaseInvestigationProps> = ({
                 />
               </div>
 
-              {user.role !== 'VIEWER' && (
+              {user.role === 'VIEWER' ? (
+                <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-800/50 text-[11px] text-amber-300 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Viewer Authorization: Read-only access. Recording official verdicts requires Analyst or Admin authorization tier.</span>
+                </div>
+              ) : (
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs text-emerald-400 font-medium">
                     {saveSuccess && 'Verdict and audit trail updated successfully!'}

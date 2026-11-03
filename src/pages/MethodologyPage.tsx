@@ -96,20 +96,21 @@ export const MethodologyPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 1. Sensor PRNU */}
+            {/* 1. Spatial Noise Residual */}
             <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-indigo-400 font-mono">MODALITY 01</span>
                 <span className="text-[11px] font-mono text-slate-500">Sensor Physics</span>
               </div>
-              <h4 className="text-sm font-semibold text-white">Sensor Noise Residual & PRNU Analysis</h4>
+              <h4 className="text-sm font-semibold text-white">High-Pass Noise Residual & Variance Consistency</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Applies a 3×3 spatial high-pass discrete Laplacian filter to separate high-frequency photo-response non-uniformity (PRNU)
-                from scene content. Blending two distinct camera sensors (e.g., donor A and donor B in a passport morph) creates a measurable
-                step discontinuity in noise variance across the facial boundary.
+                Applies a 3×3 spatial high-pass discrete Laplacian kernel to extract localized noise residuals from pixel luminance.
+                Blending two distinct donor subjects or localized synthetic infilling creates an observable variance discontinuity
+                between the facial interior and the background sensor noise profile. (Note: True camera-specific PRNU fingerprinting
+                requires multi-frame flat-field reference calibration per Lukas & Fridrich).
               </p>
               <div className="p-2.5 bg-slate-950 rounded-lg font-mono text-[11px] text-slate-400 border border-slate-800/80">
-                Formula: Residual R(x, y) = I(x, y) - Denoise(I(x, y))
+                Formula: Residual R(x, y) = 4·I(x, y) - [I(x+1,y) + I(x-1,y) + I(x,y+1) + I(x,y-1)]
               </div>
             </div>
 
@@ -260,8 +261,8 @@ export const MethodologyPage: React.FC = () => {
 
             <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
               <div className="text-xs text-slate-400">Inference Latency</div>
-              <div className="text-2xl font-bold font-mono text-white">128 ms / image</div>
-              <div className="text-[11px] text-slate-500">Optimized C++ WebAssembly & Node SIMD</div>
+              <div className="text-2xl font-bold font-mono text-white">~140 ms / portrait</div>
+              <div className="text-[11px] text-slate-500">Pure TypeScript with separable 2D DFT & ArrayBuffer buffers</div>
             </div>
           </div>
 
@@ -347,9 +348,9 @@ export const MethodologyPage: React.FC = () => {
             {[
               {
                 title: 'Landmark-based Delaunay Triangulation Morphs',
-                description: 'Classic morphing algorithm blending geometric coordinates of two donor faces. Leaves ghosting artifacts near eyes and mouth, PRNU variance, and attenuated high-frequency spectral energy.',
+                description: 'Classic morphing algorithm blending geometric coordinates of two donor faces. Leaves ghosting artifacts near eyes and mouth, spatial noise variance discrepancies, and attenuated high-frequency spectral energy.',
                 severity: 'High Prevalence',
-                mitigation: 'PRNU residual filter + 2D FFT spectral decay analysis.',
+                mitigation: 'High-pass spatial noise residual filter + 2D FFT spectral decay analysis.',
               },
               {
                 title: 'Generative AI (StyleGAN & Latent Space Blends)',
@@ -359,7 +360,7 @@ export const MethodologyPage: React.FC = () => {
               },
               {
                 title: 'Print-Scan Recompression Attack',
-                description: 'Printing a morphed image on photographic paper and rescanning to hide digital seams and ELA artifacts. Destroys fine PRNU noise but creates distinct scanner sensor line artifacts and double quantization grids.',
+                description: 'Printing a morphed image on photographic paper and rescanning to hide digital seams and ELA artifacts. Destroys original sensor noise but creates distinct scanner sensor line artifacts and double quantization grids.',
                 severity: 'Anti-Forensic Attack',
                 mitigation: 'Double JPEG DCT grid phase analysis + scanner sensor noise profile detection.',
               },

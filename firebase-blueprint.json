@@ -59,6 +59,10 @@
           "type": "string",
           "description": "Cryptographic SHA-256 evidence hash."
         },
+        "imageHashSha256": {
+          "type": "string",
+          "description": "Cryptographic SHA-256 evidence hash."
+        },
         "riskLevel": {
           "type": "string",
           "enum": ["LOW RISK", "MODERATE RISK", "HIGHER RISK", "INCONCLUSIVE"],
@@ -68,9 +72,14 @@
           "type": "number",
           "description": "Statistical confidence score between 0 and 1."
         },
+        "status": {
+          "type": "string",
+          "enum": ["Uploaded", "Processing", "Completed", "Inconclusive", "Failed", "Archived"],
+          "description": "Lifecycle state of the forensic case."
+        },
         "analystVerdict": {
           "type": "string",
-          "enum": ["VERIFIED_AUTHENTIC", "CONFIRMED_MORPH", "FLAGGED_FOR_MANUAL_REVIEW", "PENDING_REVIEW"],
+          "enum": ["VERIFIED_AUTHENTIC", "CONFIRMED_MORPH", "FLAGGED_FOR_MANUAL_REVIEW", "PENDING_REVIEW", "SUSPECTED_MORPH", "INCONCLUSIVE_INSUFFICIENT_DATA"],
           "description": "Official examiner sign-off determination."
         },
         "analystNotes": {
@@ -90,7 +99,7 @@
           "description": "Last modified timestamp."
         }
       },
-      "required": ["id", "title", "imageHash", "riskLevel"]
+      "required": ["id", "title"]
     },
     "AuditLog": {
       "title": "AuditLog",

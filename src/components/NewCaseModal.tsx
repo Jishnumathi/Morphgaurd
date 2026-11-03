@@ -17,6 +17,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { ForensicCase, UserSession } from '../types.js';
+import { getAuthBearerHeader } from '../services/auth/googleAuth.js';
 
 interface NewCaseModalProps {
   user: UserSession;
@@ -114,9 +115,14 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
       formData.append('analystUser', user.email);
       formData.append('analystRole', user.role);
 
+      if (user.role === 'VIEWER') {
+        throw new Error('Access Denied: Your account currently has VIEWER authorization. Forensic case ingestion requires ANALYST or ADMIN role.');
+      }
+
       setStatusMessage('Extracting 8 multimodal forensic modalities (Noise, FFT, LBP, ELA, Edges)...');
       const response = await fetch('/api/cases/upload', {
         method: 'POST',
+        headers: getAuthBearerHeader(),
         body: formData,
       });
 
@@ -285,6 +291,11 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
+            {user.role === 'VIEWER' && (
+              <span className="text-[11px] text-amber-400 bg-amber-950/60 px-2 py-1 rounded border border-amber-800/40">
+                Viewer Role: Read-only access
+              </span>
+            )}
             <button
               onClick={onClose}
               disabled={isProcessing}
@@ -295,8 +306,9 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
             <button
               id="start-forensic-analysis-btn"
               onClick={handleUploadAndAnalyze}
-              disabled={isProcessing || !selectedFile}
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-50 flex items-center space-x-1.5 shadow-sm"
+              disabled={isProcessing || !selectedFile || user.role === 'VIEWER'}
+              title={user.role === 'VIEWER' ? 'Read-only viewer account cannot ingest evidence' : undefined}
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1.5 shadow-sm"
             >
               {isProcessing ? (
                 <>
@@ -306,7 +318,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Execute Analysis</span>
+                  <span>{user.role === 'VIEWER' ? 'Viewer Mode (Read-Only)' : 'Execute Analysis'}</span>
                 </>
               )}
             </button>

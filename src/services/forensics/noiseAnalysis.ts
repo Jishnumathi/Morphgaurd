@@ -1,6 +1,9 @@
 /**
- * MorphGuard AI — Noise Forensics Engine
- * Computes high-pass noise residuals, local variance, and inter-region noise consistency.
+ * MorphGuard AI — Spatial Noise Residual Forensics Engine
+ * Computes 3x3 high-pass discrete Laplacian noise residuals and evaluates
+ * regional variance consistency between facial interior and background regions.
+ * (Note: Single-image screening evaluates inter-region spatial variance consistency;
+ * camera-specific PRNU sensor identification requires multi-frame flat-field reference calibration).
  */
 
 import { DecodedImage, createPngDataUrl } from './decoder.js';

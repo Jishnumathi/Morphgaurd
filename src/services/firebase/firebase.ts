@@ -20,6 +20,7 @@ import {
   setDoc,
   getDoc,
   getDocs,
+  deleteDoc,
   query,
   orderBy,
   limit,
@@ -176,24 +177,64 @@ export async function syncUserProfileToFirestore(user: FirebaseUser, role: UserR
   }
 }
 
+// Returns active Firebase Auth user if signed in
+export function getCurrentFirebaseUser(): FirebaseUser | null {
+  return auth.currentUser;
+}
+
+// Sanitizes case payload to prevent exceeding Firestore 1MB document limit
+export function prepareCasePayload(target: ForensicCase): Record<string, any> {
+  const safe: Record<string, any> = { ...target };
+
+  if (safe.imageUrl && typeof safe.imageUrl === 'string' && safe.imageUrl.length > 150000) {
+    if (!safe.thumbnailUrl) {
+      safe.thumbnailUrl = safe.imageUrl.substring(0, 500);
+    }
+    delete safe.imageUrl;
+  }
+
+  if (safe.results) {
+    const r = { ...safe.results };
+    if (r.anomalyHeatmapDataUrl && r.anomalyHeatmapDataUrl.length > 100000) delete r.anomalyHeatmapDataUrl;
+    if (r.noise?.residualMapDataUrl && r.noise.residualMapDataUrl.length > 100000) r.noise = { ...r.noise, residualMapDataUrl: undefined };
+    if (r.frequency?.fftSpectrumDataUrl && r.frequency.fftSpectrumDataUrl.length > 100000) r.frequency = { ...r.frequency, fftSpectrumDataUrl: undefined };
+    if (r.compression?.elaMapDataUrl && r.compression.elaMapDataUrl.length > 100000) r.compression = { ...r.compression, elaMapDataUrl: undefined };
+    if (r.edge?.edgeMapDataUrl && r.edge.edgeMapDataUrl.length > 100000) r.edge = { ...r.edge, edgeMapDataUrl: undefined };
+    safe.results = r;
+  }
+
+  if (target.results?.summary?.riskLevel && !safe.riskLevel) {
+    safe.riskLevel = target.results.summary.riskLevel;
+  }
+  if (!safe.imageHash && target.imageHashSha256) {
+    safe.imageHash = target.imageHashSha256;
+  }
+
+  safe.updatedAt = new Date().toISOString();
+  return safe;
+}
+
 // --- Case Persistence ---
 
 export async function saveCaseToFirestore(forensicCase: ForensicCase) {
-  if (!auth.currentUser) {
-    return;
-  }
-  const caseRef = doc(db, 'cases', forensicCase.id);
+  if (!auth.currentUser) return;
   try {
-    await setDoc(
-      caseRef,
-      {
-        ...forensicCase,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    const caseRef = doc(db, 'cases', forensicCase.id);
+    const payload = prepareCasePayload(forensicCase);
+    await setDoc(caseRef, payload, { merge: true });
   } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, `cases/${forensicCase.id}`);
+    console.debug('Firestore saveCase notice:', err);
+  }
+}
+
+export async function deleteCaseFromFirestoreClient(caseId: string): Promise<boolean> {
+  if (!auth.currentUser) return false;
+  try {
+    await deleteDoc(doc(db, 'cases', caseId));
+    return true;
+  } catch (err) {
+    console.debug('Firestore deleteCase notice:', err);
+    return false;
   }
 }
 
@@ -207,7 +248,8 @@ export async function getCasesFromFirestore(): Promise<ForensicCase[]> {
     });
     return cases;
   } catch (err) {
-    handleFirestoreError(err, OperationType.LIST, 'cases');
+    console.debug('Firestore getCases notice:', err);
+    return [];
   }
 }
 
@@ -224,7 +266,7 @@ export function subscribeToCases(
       onUpdate(cases);
     },
     (error) => {
-      console.warn('Firestore subscription on cases notice:', error);
+      console.debug('Firestore subscription on cases notice:', error);
       if (onError) onError(error);
     }
   );
@@ -233,14 +275,12 @@ export function subscribeToCases(
 // --- Audit Trail Persistence ---
 
 export async function saveAuditLogToFirestore(logEntry: AuditLogEntry) {
-  if (!auth.currentUser) {
-    return;
-  }
-  const logRef = doc(db, 'auditTrail', logEntry.id);
+  if (!auth.currentUser) return;
   try {
+    const logRef = doc(db, 'auditTrail', logEntry.id);
     await setDoc(logRef, logEntry);
   } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, `auditTrail/${logEntry.id}`);
+    console.debug('Firestore saveAuditLog notice:', err);
   }
 }
 
@@ -253,7 +293,8 @@ export async function getAuditLogsFromFirestore(): Promise<AuditLogEntry[]> {
     snap.forEach((d) => entries.push(d.data() as AuditLogEntry));
     return entries;
   } catch (err) {
-    handleFirestoreError(err, OperationType.LIST, 'auditTrail');
+    console.debug('Firestore getAuditLogs notice:', err);
+    return [];
   }
 }
 

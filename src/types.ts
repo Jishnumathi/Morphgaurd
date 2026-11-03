@@ -15,6 +15,7 @@ export interface UserSession {
   googleId?: string;
   emailVerified?: boolean;
   lastLoginAt?: string;
+  token?: string;
 }
 
 export type RiskLevel = 'LOW RISK' | 'MODERATE RISK' | 'HIGHER RISK' | 'INCONCLUSIVE';

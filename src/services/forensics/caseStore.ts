@@ -6,6 +6,13 @@
 
 import { createHash } from 'crypto';
 import { ForensicCase, AuditLogEntry, DashboardStatistics, UserRole } from '../../types.js';
+import {
+  persistCaseToFirestore,
+  fetchCasesFromFirestore,
+  deleteCaseFromFirestore,
+  persistAuditLogToFirestore,
+  fetchAuditLogsFromFirestore,
+} from './serverDb.js';
 
 class CaseStore {
   private cases: Map<string, ForensicCase> = new Map();
@@ -14,6 +21,38 @@ class CaseStore {
 
   constructor() {
     this.seedDefaultCases();
+    this.initFromFirestore().catch((e) => console.debug('[CaseStore] Initial Firestore sync note:', e));
+  }
+
+  public async initFromFirestore(): Promise<void> {
+    try {
+      const remoteCases = await fetchCasesFromFirestore();
+      if (remoteCases && remoteCases.length > 0) {
+        for (const c of remoteCases) {
+          const existing = this.cases.get(c.id);
+          if (existing) {
+            this.cases.set(c.id, { ...existing, ...c, imageUrl: existing.imageUrl || c.imageUrl });
+          } else {
+            this.cases.set(c.id, c);
+          }
+        }
+        console.log(`[CaseStore] Synchronized ${remoteCases.length} persistent cases from Firestore.`);
+      }
+
+      const remoteLogs = await fetchAuditLogsFromFirestore(100);
+      if (remoteLogs && remoteLogs.length > 0) {
+        const idSet = new Set(this.auditLogs.map((l) => l.id));
+        for (const log of remoteLogs) {
+          if (!idSet.has(log.id)) {
+            this.auditLogs.push(log);
+            idSet.add(log.id);
+          }
+        }
+        this.auditLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      }
+    } catch (err) {
+      console.warn('[CaseStore] Firestore sync initialization notice:', err);
+    }
   }
 
   public logAuditEvent(
@@ -44,6 +83,7 @@ class CaseStore {
     };
 
     this.auditLogs.unshift(entry);
+    persistAuditLogToFirestore(entry).catch((e) => console.debug('[CaseStore] Audit log Firestore notice:', e));
     return entry;
   }
 
@@ -56,6 +96,7 @@ class CaseStore {
 
   public createCase(newCase: ForensicCase): ForensicCase {
     this.cases.set(newCase.id, newCase);
+    persistCaseToFirestore(newCase).catch((e) => console.debug('[CaseStore] Create case Firestore notice:', e));
     this.logAuditEvent(
       'CASE_CREATED',
       `Forensic case ${newCase.caseNumber} registered: "${newCase.title}". Subject: ${newCase.targetSubjectName || 'Unknown'}. Hash: ${newCase.imageHashSha256.substring(0, 16)}...`,
@@ -78,6 +119,21 @@ class CaseStore {
     );
   }
 
+  public deleteCase(id: string, user: string = 'admin@morphguard.gov'): boolean {
+    const target = this.cases.get(id);
+    if (!target) return false;
+    this.cases.delete(id);
+    deleteCaseFromFirestore(id).catch((e) => console.debug('[CaseStore] Delete case Firestore notice:', e));
+    this.logAuditEvent(
+      'CASE_ARCHIVED',
+      `Forensic case ${target.caseNumber} removed from active registry by ${user}.`,
+      target.id,
+      user,
+      'ADMIN'
+    );
+    return true;
+  }
+
   public updateCaseVerdict(
     id: string,
     verdict: ForensicCase['analystVerdict'],
@@ -89,6 +145,8 @@ class CaseStore {
 
     target.analystVerdict = verdict;
     if (notes) target.notes = notes;
+
+    persistCaseToFirestore(target).catch((e) => console.debug('[CaseStore] Verdict update Firestore notice:', e));
 
     this.logAuditEvent(
       'VERDICT_RECORDED',

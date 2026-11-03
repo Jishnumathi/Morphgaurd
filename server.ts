@@ -17,6 +17,16 @@ import {
   FORENSIC_SYSTEM_ROLES,
   GeminiModelTier,
 } from './src/services/forensics/geminiChatService.js';
+import {
+  authenticateRequest,
+  requireAuth,
+  requireRole,
+  generateSessionToken,
+} from './src/services/auth/tokenAuth.js';
+import {
+  syncUserToFirestore,
+  fetchUsersFromFirestore,
+} from './src/services/forensics/serverDb.js';
 import { ForensicCase, UserRole, UserSession } from './src/types.js';
 
 // Memory storage for secure, immediate in-process forensic inspection
@@ -41,6 +51,7 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  app.use(authenticateRequest);
 
   // --- API Routes ---
 
@@ -209,13 +220,15 @@ async function startServer() {
       }
 
       const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
-      const selectedRole: UserRole = role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'ANALYST';
+      const email = payload.email || 'officer@morphguard.gov';
+      const isLeadAdmin = email === 'vu.241fa04468@gmail.com';
+      const selectedRole: UserRole = isLeadAdmin ? 'ADMIN' : (role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'ANALYST');
 
       const user: UserSession = {
         id: `usr-google-${payload.sub || Date.now()}`,
         googleId: payload.sub,
         name: payload.name || 'Verified Google Examiner',
-        email: payload.email || 'officer@morphguard.gov',
+        email,
         avatarUrl: payload.picture,
         emailVerified: Boolean(payload.email_verified),
         role: selectedRole,
@@ -223,6 +236,22 @@ async function startServer() {
         authProvider: 'google',
         lastLoginAt: new Date().toISOString(),
       };
+
+      const token = generateSessionToken({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      });
+      user.token = token;
+
+      syncUserToFirestore({
+        uid: user.id,
+        email: user.email,
+        displayName: user.name,
+        role: user.role,
+        agency: user.agency,
+      }).catch((e) => console.debug('[Auth] Firestore sync notice:', e));
 
       caseStore.logAuditEvent(
         'USER_AUTHENTICATED',
@@ -232,7 +261,7 @@ async function startServer() {
         user.role
       );
 
-      res.json({ success: true, user });
+      res.json({ success: true, user, token });
     } catch (err: any) {
       console.error('Error verifying Google token:', err);
       res.status(400).json({ error: 'Failed to verify Google credential token.' });
@@ -246,7 +275,8 @@ async function startServer() {
       if (!email) {
         return res.status(400).json({ error: 'Email address is required.' });
       }
-      const selectedRole: UserRole = role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'ANALYST';
+      const isLeadAdmin = email === 'vu.241fa04468@gmail.com';
+      const selectedRole: UserRole = isLeadAdmin ? 'ADMIN' : (role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'ANALYST');
 
       const user: UserSession = {
         id: `usr-google-${googleId || Date.now()}`,
@@ -263,6 +293,22 @@ async function startServer() {
         lastLoginAt: new Date().toISOString(),
       };
 
+      const token = generateSessionToken({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      });
+      user.token = token;
+
+      syncUserToFirestore({
+        uid: user.id,
+        email: user.email,
+        displayName: user.name,
+        role: user.role,
+        agency: user.agency,
+      }).catch((e) => console.debug('[Auth] Firestore sync notice:', e));
+
       caseStore.logAuditEvent(
         'USER_AUTHENTICATED',
         `Google Sign-In authenticated via OAuth2 for ${user.name} (${user.email}). Role: ${user.role}.`,
@@ -271,7 +317,7 @@ async function startServer() {
         user.role
       );
 
-      res.json({ success: true, user });
+      res.json({ success: true, user, token });
     } catch (err: any) {
       console.error('Error syncing Google profile:', err);
       res.status(500).json({ error: 'Failed to sync Google user profile.' });
@@ -281,7 +327,8 @@ async function startServer() {
   // Standard / Demo Login & Session Creation
   app.post('/api/auth/login', (req: Request, res: Response) => {
     const { email, role, name } = req.body;
-    const selectedRole: UserRole = role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'ANALYST';
+    const isLeadAdmin = email === 'vu.241fa04468@gmail.com';
+    const selectedRole: UserRole = isLeadAdmin ? 'ADMIN' : (role === 'ADMIN' ? 'ADMIN' : role === 'VIEWER' ? 'VIEWER' : 'ANALYST');
 
     const user: UserSession = {
       id: `usr-${Date.now()}`,
@@ -293,6 +340,22 @@ async function startServer() {
       lastLoginAt: new Date().toISOString(),
     };
 
+    const token = generateSessionToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    });
+    user.token = token;
+
+    syncUserToFirestore({
+      uid: user.id,
+      email: user.email,
+      displayName: user.name,
+      role: user.role,
+      agency: user.agency,
+    }).catch((e) => console.debug('[Auth] Firestore sync notice:', e));
+
     caseStore.logAuditEvent(
       'USER_AUTHENTICATED',
       `Examiner session established for ${user.name} (${user.email}) with role ${user.role}.`,
@@ -301,7 +364,7 @@ async function startServer() {
       user.role
     );
 
-    res.json({ success: true, user });
+    res.json({ success: true, user, token });
   });
 
   // Session Logout
@@ -315,6 +378,42 @@ async function startServer() {
       role || 'ANALYST'
     );
     res.json({ success: true });
+  });
+
+  // Role Administration: List registered examiners (Admin only)
+  app.get('/api/auth/users', requireRole(['ADMIN']), async (req: Request, res: Response) => {
+    try {
+      const users = await fetchUsersFromFirestore();
+      res.json(users);
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to retrieve registered examiners.' });
+    }
+  });
+
+  // Role Administration: Update user authorization role (Admin only)
+  app.post('/api/auth/users/:userId/role', requireRole(['ADMIN']), async (req: Request, res: Response) => {
+    try {
+      const { role, email, displayName } = req.body;
+      if (!['ADMIN', 'ANALYST', 'VIEWER'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be ADMIN, ANALYST, or VIEWER.' });
+      }
+      await syncUserToFirestore({
+        uid: req.params.userId,
+        email: email || '',
+        displayName: displayName || '',
+        role: role as UserRole,
+      });
+      caseStore.logAuditEvent(
+        'CASE_UPDATED',
+        `Examiner access privilege updated for ${req.params.userId} to ${role} by Admin ${req.user?.email || 'admin'}.`,
+        undefined,
+        req.user?.email || 'admin@morphguard.gov',
+        'ADMIN'
+      );
+      res.json({ success: true, userId: req.params.userId, role });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to update user role.' });
+    }
   });
 
   // Dashboard Statistics
@@ -338,18 +437,29 @@ async function startServer() {
     res.json(found);
   });
 
-  // Record Examiner Verdict
-  app.post('/api/cases/:case_id/verdict', (req: Request, res: Response) => {
+  // Record Examiner Verdict (Analyst or Admin only)
+  app.post('/api/cases/:case_id/verdict', requireRole(['ANALYST', 'ADMIN']), (req: Request, res: Response) => {
     const { verdict, notes, user } = req.body;
-    const updated = caseStore.updateCaseVerdict(req.params.case_id, verdict, notes, user);
+    const examinerEmail = req.user?.email || user || 'officer.jenkins@morphguard.gov';
+    const updated = caseStore.updateCaseVerdict(req.params.case_id, verdict, notes, examinerEmail);
     if (!updated) {
       return res.status(404).json({ error: 'Forensic case not found.' });
     }
     res.json(updated);
   });
 
-  // Upload & Analyze Image (Single or Batch Item)
-  app.post('/api/cases/upload', upload.single('image'), async (req: Request, res: Response) => {
+  // Delete Case Dossier (Admin only)
+  app.delete('/api/cases/:case_id', requireRole(['ADMIN']), (req: Request, res: Response) => {
+    const examinerEmail = req.user?.email || 'admin@morphguard.gov';
+    const success = caseStore.deleteCase(req.params.case_id, examinerEmail);
+    if (!success) {
+      return res.status(404).json({ error: 'Case dossier not found or already deleted.' });
+    }
+    res.json({ success: true, deletedCaseId: req.params.case_id });
+  });
+
+  // Upload & Analyze Image (Analyst or Admin only)
+  app.post('/api/cases/upload', requireRole(['ANALYST', 'ADMIN']), upload.single('image'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No image file uploaded.' });

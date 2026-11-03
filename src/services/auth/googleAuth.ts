@@ -279,7 +279,7 @@ class GoogleAuthService {
     }
 
     const data = await res.json();
-    return data.user;
+    return { ...data.user, token: data.token || data.user?.token };
   }
 
   /**
@@ -305,7 +305,7 @@ class GoogleAuthService {
     }
 
     const data = await res.json();
-    return data.user;
+    return { ...data.user, token: data.token || data.user?.token };
   }
 
   /**
@@ -325,6 +325,7 @@ class GoogleAuthService {
     const data = await res.json();
     const user: UserSession = {
       ...data.user,
+      token: data.token || data.user?.token,
       authProvider: 'demo',
       lastLoginAt: new Date().toISOString(),
     };
@@ -340,7 +341,7 @@ class GoogleAuthService {
       if (user) {
         await fetch('/api/auth/logout', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ email: user.email, role: user.role }),
         });
       }
@@ -356,3 +357,28 @@ class GoogleAuthService {
 }
 
 export const googleAuthService = new GoogleAuthService();
+
+/**
+ * Returns JSON headers including Bearer authorization token if user session exists
+ */
+export function getAuthHeaders(): Record<string, string> {
+  const session = googleAuthService.getPersistedSession();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (session?.token) {
+    headers['Authorization'] = `Bearer ${session.token}`;
+  }
+  return headers;
+}
+
+/**
+ * Returns Bearer authorization header for multipart form data uploads
+ */
+export function getAuthBearerHeader(): Record<string, string> {
+  const session = googleAuthService.getPersistedSession();
+  if (session?.token) {
+    return { Authorization: `Bearer ${session.token}` };
+  }
+  return {};
+}

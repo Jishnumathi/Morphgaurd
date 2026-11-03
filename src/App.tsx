@@ -16,7 +16,7 @@ import { CopilotPage } from './pages/CopilotPage.js';
 import { NewCaseModal } from './components/NewCaseModal.js';
 import { GeminiChatbot } from './components/GeminiChatbot.js';
 import { LoginModal } from './components/LoginModal.js';
-import { googleAuthService } from './services/auth/googleAuth.js';
+import { googleAuthService, getAuthHeaders } from './services/auth/googleAuth.js';
 import {
   saveCaseToFirestore,
   getCasesFromFirestore,
@@ -185,7 +185,27 @@ export function App() {
   }, []);
 
   // Handle Role Switch
-  const handleRoleChange = (role: UserRole) => {
+  const handleRoleChange = async (role: UserRole) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, name: user.name, role }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const updated: UserSession = {
+          ...data.user,
+          token: data.token || data.user?.token,
+        };
+        setUser(updated);
+        googleAuthService.setPersistedSession(updated);
+        refreshData();
+        return;
+      }
+    } catch (e) {
+      console.warn('Role switch sync notice:', e);
+    }
     setUser((prev) => {
       const updated = { ...prev, role };
       googleAuthService.setPersistedSession(updated);
@@ -274,10 +294,19 @@ export function App() {
     verdict: ForensicCase['analystVerdict'],
     notes?: string
   ) => {
+    if (user.role === 'VIEWER') {
+      setNotificationBanner({
+        type: 'error',
+        message: 'Access Denied: Viewer accounts are read-only. Recording verdicts requires Analyst or Admin authorization.',
+      });
+      setTimeout(() => setNotificationBanner(null), 4000);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/cases/${caseId}/verdict`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           verdict,
           notes,

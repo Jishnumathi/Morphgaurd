@@ -74,17 +74,33 @@ export function analyzeTexture(img: DecodedImage, faceBox?: BoundingBox): Textur
   const lbpUniformityRatio = totalLbpPixels > 0 ? uniformLbpCount / totalLbpPixels : 0.8;
 
   // --- 2. Gray-Level Co-occurrence Matrix (GLCM) ---
-  // Quantize to 16 gray levels for statistical stability and robustness
+  // Quantize to 16 gray levels and compute across 4 standard Haralick directions (0, 45, 90, 135 deg)
   const LEVELS = 16;
   const glcm = new Float32Array(LEVELS * LEVELS);
   let totalTransitions = 0;
 
-  for (let y = y0; y < y1; y++) {
-    for (let x = x0; x < x1 - 1; x++) {
+  const offsets = [
+    { dx: 1, dy: 0 },   // 0 deg
+    { dx: 1, dy: 1 },   // 45 deg
+    { dx: 0, dy: 1 },   // 90 deg
+    { dx: -1, dy: 1 },  // 135 deg
+  ];
+
+  for (let y = y0 + 1; y < y1 - 1; y++) {
+    for (let x = x0 + 1; x < x1 - 1; x++) {
       const g1 = Math.min(LEVELS - 1, Math.floor((grayscale[y * width + x] / 256) * LEVELS));
-      const g2 = Math.min(LEVELS - 1, Math.floor((grayscale[y * width + (x + 1)] / 256) * LEVELS));
-      glcm[g1 * LEVELS + g2]++;
-      totalTransitions++;
+
+      for (const off of offsets) {
+        const nx = x + off.dx;
+        const ny = y + off.dy;
+        if (nx >= x0 && nx < x1 && ny >= y0 && ny < y1) {
+          const g2 = Math.min(LEVELS - 1, Math.floor((grayscale[ny * width + nx] / 256) * LEVELS));
+          // Symmetric increment for direction-invariant texture
+          glcm[g1 * LEVELS + g2]++;
+          glcm[g2 * LEVELS + g1]++;
+          totalTransitions += 2;
+        }
+      }
     }
   }
 

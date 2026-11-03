@@ -25,6 +25,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ForensicCase, UserSession } from '../types.js';
+import { getAuthBearerHeader } from '../services/auth/googleAuth.js';
 
 interface BatchTriagePageProps {
   user: UserSession;
@@ -138,8 +139,13 @@ export const BatchTriagePage: React.FC<BatchTriagePageProps> = ({
         formData.append('analystUser', user.email);
         formData.append('analystRole', user.role);
 
+        if (user.role === 'VIEWER') {
+          throw new Error('Access Denied: Viewer accounts are read-only. Batch analysis requires Analyst or Admin authorization.');
+        }
+
         const response = await fetch('/api/cases/upload', {
           method: 'POST',
+          headers: getAuthBearerHeader(),
           body: formData,
         });
 

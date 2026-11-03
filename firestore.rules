@@ -2,12 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Global Safety Net - Default Deny
+    // Default Deny
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Hardened Global Security Helpers
+    // Authentication & Identity Helpers
     function isSignedIn() {
       return request.auth != null;
     }
@@ -28,10 +28,24 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    function isSystemAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'vu.241fa04468@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN')
+      );
+    }
+
+    function getUserRole() {
+      return (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : ((isSignedIn() && request.auth.token.email == 'vu.241fa04468@gmail.com') ? 'ADMIN' : 'ANALYST');
+    }
+
+    function isAnalystOrAdmin() {
+      return isSignedIn() && (
+        isSystemAdmin() ||
+        getUserRole() in ['ANALYST', 'ADMIN']
       );
     }
 
@@ -51,9 +65,10 @@ service cloud.firestore {
         data.id.size() <= 128 &&
         data.title is string &&
         data.title.size() <= 200 &&
-        data.imageHash is string &&
-        data.imageHash.size() <= 128 &&
-        data.riskLevel in ['LOW RISK', 'MODERATE RISK', 'HIGHER RISK', 'INCONCLUSIVE'];
+        (!('imageHashSha256' in data) || (data.imageHashSha256 is string && data.imageHashSha256.size() <= 128)) &&
+        (!('imageHash' in data) || (data.imageHash is string && data.imageHash.size() <= 128)) &&
+        (!('status' in data) || data.status in ['Uploaded', 'Processing', 'Completed', 'Inconclusive', 'Failed', 'Archived']) &&
+        (!('analystVerdict' in data) || data.analystVerdict in ['PENDING_REVIEW', 'VERIFIED_AUTHENTIC', 'SUSPECTED_MORPH', 'INCONCLUSIVE_INSUFFICIENT_DATA', 'CONFIRMED_MORPH', 'FLAGGED_FOR_MANUAL_REVIEW']);
     }
 
     // Validation Blueprint for Audit Logs (Immutable)
@@ -90,51 +105,53 @@ service cloud.firestore {
         data.text.size() <= 50000;
     }
 
-    // Connection Health Probe (Used by startup connection test)
+    // Connection Health Probe
     match /test/{testId} {
       allow get: if true;
       allow write: if false;
     }
 
-    // User Collection Rules
+    // Users Collection
     match /users/{userId} {
-      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
-      allow list: if isAdmin();
+      allow get: if isValidId(userId) && (isOwner(userId) || isAnalystOrAdmin());
+      allow list: if isSignedIn() && isAnalystOrAdmin();
       allow create: if isValidId(userId) && isOwner(userId) && isValidUser(incoming());
-      allow update: if isValidId(userId) && (isOwner(userId) || isAdmin()) && isValidUser(incoming());
-      allow delete: if isAdmin();
+      allow update: if isValidId(userId) && (
+        (isOwner(userId) && (!('role' in incoming()) || incoming().role == existing().role) && isValidUser(incoming())) ||
+        (isSystemAdmin() && isValidUser(incoming()))
+      );
+      allow delete: if isValidId(userId) && isSystemAdmin();
     }
 
-    // Forensic Cases Collection (Public Read/List for Examiners, Signed-in Write, Admin Delete)
+    // Forensic Cases Collection (Public Read/List for Inspection, Analyst/Admin Write, Admin Delete)
     match /cases/{caseId} {
       allow get, list: if true;
-      allow create: if isValidId(caseId) && isSignedIn() && isValidCase(incoming());
-      allow update: if isValidId(caseId) && isSignedIn() && isValidCase(incoming());
-      allow delete: if isValidId(caseId) && isAdmin();
+      allow create: if isValidId(caseId) && isAnalystOrAdmin() && isValidCase(incoming());
+      allow update: if isValidId(caseId) && isAnalystOrAdmin() && isValidCase(incoming());
+      allow delete: if isValidId(caseId) && isSystemAdmin();
     }
 
-    // Chain of Custody Audit Trail (Public Read/List for Transparency, Signed-in Append, Immutable)
+    // Chain of Custody Audit Trail (Public Read/List for Evidence Transparency, Authenticated Append, Immutable)
     match /auditTrail/{logId} {
       allow get, list: if true;
       allow create: if isValidId(logId) && isSignedIn() && isValidAuditLog(incoming());
-      allow update, delete: if false; // Strict Immutability Guard
+      allow update, delete: if false;
     }
 
     // Multi-turn Gemini Chat Sessions
     match /chatSessions/{sessionId} {
-      allow get: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow get: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isSystemAdmin());
       allow list: if isSignedIn();
       allow create: if isValidId(sessionId) && isSignedIn() && isValidChatSession(incoming());
-      allow update: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin()) && isValidChatSession(incoming());
-      allow delete: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow update: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isSystemAdmin()) && isValidChatSession(incoming());
+      allow delete: if isValidId(sessionId) && isSignedIn() && (existing().userId == request.auth.uid || isSystemAdmin());
 
-      // Chat Messages Subcollection
       match /messages/{messageId} {
         allow get, list: if isValidId(messageId) && isSignedIn() &&
-          (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin());
+          (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isSystemAdmin());
         allow create: if isValidId(messageId) && isSignedIn() && isValidChatMessage(incoming()) &&
-          (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin());
-        allow update, delete: if isAdmin();
+          (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isSystemAdmin());
+        allow update, delete: if isSystemAdmin();
       }
     }
   }

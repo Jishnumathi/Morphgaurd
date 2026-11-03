@@ -121,7 +121,11 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => onRoleChange(r)}
                   className={`px-2 py-1 text-[11px] font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                     user.role === r
-                      ? 'bg-slate-800 text-white shadow-xs font-semibold'
+                      ? r === 'ADMIN'
+                        ? 'bg-purple-900/60 text-purple-200 border border-purple-500/40 shadow-xs font-semibold'
+                        : r === 'VIEWER'
+                        ? 'bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-xs font-semibold'
+                        : 'bg-indigo-900/60 text-indigo-200 border border-indigo-500/40 shadow-xs font-semibold'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
